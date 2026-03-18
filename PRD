@@ -1,0 +1,935 @@
+# Product Requirements Document (PRD)
+## DevDock — Developer Collaboration & Repository Management Platform
+
+**Version:** 1.0  
+**Date:** March 12, 2026  
+**Status:** Active Development  
+
+---
+
+## Table of Contents
+
+1. [Executive Summary](#1-executive-summary)
+2. [Product Vision & Goals](#2-product-vision--goals)
+3. [Target Audience & User Personas](#3-target-audience--user-personas)
+4. [Technology Stack](#4-technology-stack)
+5. [System Architecture](#5-system-architecture)
+6. [Feature Specifications](#6-feature-specifications)
+   - 6.1 Authentication & Identity
+   - 6.2 Repository Management
+   - 6.3 File Management & Code Editor
+   - 6.4 Social Features
+   - 6.5 Messaging System
+   - 6.6 Collaboration & Access Control
+   - 6.7 Pull Requests & Issues
+   - 6.8 GitHub Integration
+   - 6.9 AI Assistant & Code Intelligence
+   - 6.10 Testing & QA Engine
+   - 6.11 Live Collaborative Editor
+   - 6.12 Gamification & Achievements
+   - 6.13 Notifications
+   - 6.14 User Profiles & Discovery
+   - 6.15 Admin Capabilities
+7. [Database Schema](#7-database-schema)
+8. [API Reference](#8-api-reference)
+9. [Non-Functional Requirements](#9-non-functional-requirements)
+10. [Security Requirements](#10-security-requirements)
+11. [Future Roadmap](#11-future-roadmap)
+
+---
+
+## 1. Executive Summary
+
+DevDock is a self-hosted, full-stack developer platform that combines source-code repository management, real-time collaboration, AI-assisted development, and social networking into a single cohesive product. It is designed to give teams and individual developers a private, extensible alternative to GitHub/GitLab with built-in AI tooling, live code editing, messaging, and a gamified contribution system.
+
+### Core Value Propositions
+- **Own your data** — runs on-premise with a MySQL backend and local file storage
+- **AI-first workflow** — integrated Groq/LLaMA AI assistant for code suggestions, explanations, and automated QA
+- **Real-time everything** — Socket.io powers live messaging, presence, and collaborative editing
+- **Social developer network** — follow, message, collaborate, and track contributions like a professional social platform
+- **GitHub bridge** — import, push, pull, and sync repositories directly with GitHub
+
+---
+
+## 2. Product Vision & Goals
+
+### Vision
+> *A unified developer workspace where writing, reviewing, collaborating on, and shipping code happens in a single platform — with AI assistance at every step.*
+
+### Goals
+
+| Priority | Goal |
+|----------|------|
+| P0 | Stable repository CRUD with file versioning and commit history |
+| P0 | Secure JWT + OAuth authentication (Google, GitHub) |
+| P0 | Real-time direct messaging between users |
+| P1 | Pull Request and Issue tracking per repository |
+| P1 | GitHub push/pull/import synchronization |
+| P1 | AI code assistant (suggest, explain, improve, chat) |
+| P1 | Live collaborative code editor |
+| P2 | AI-powered static analysis and test report generation |
+| P2 | QA dashboard with defect tracking |
+| P2 | Gamification — badges, contribution heatmap, activity feed |
+| P3 | Admin panel for user and content management |
+
+---
+
+## 3. Target Audience & User Personas
+
+### Persona 1 — Solo Developer
+- Wants a private GitHub alternative to host personal projects
+- Uses AI assistant for quick code help without leaving the platform
+- Tracks contribution streaks to stay motivated
+
+### Persona 2 — Small Engineering Team
+- Needs role-based file collaboration (viewer / editor / owner)
+- Creates pull requests and issues to coordinate work
+- Relies on real-time messaging and live editor for pair programming
+
+### Persona 3 — Open-Source Contributor
+- Explores public repositories and stars notable projects
+- Follows other developers and tracks their activity
+- Forks repositories and syncs changes back via GitHub integration
+
+### Persona 4 — QA Engineer / Team Lead
+- Runs automated static analysis on repository files
+- Generates AI test plans and QA reports with defect severity levels
+- Reviews quality scores and tracks defect history over time
+
+---
+
+## 4. Technology Stack
+
+### Backend
+| Layer | Technology | Version |
+|-------|-----------|---------|
+| Runtime | Node.js | v14+ |
+| Framework | Express.js | ^4.18 |
+| Database | MySQL | 8+ |
+| ORM/Query | mysql2 | ^3.6 |
+| Authentication | JWT (jsonwebtoken) | ^9.0 |
+| Password Hashing | bcryptjs | ^2.4 |
+| OAuth | passport-google-oauth20, passport-github2 | latest |
+| Real-time | Socket.io | ^4.8 |
+| File Uploads | Multer | ^1.4 |
+| AI | Groq SDK (LLaMA 3.1) | ^0.37 |
+| HTTP Client | Axios | ^1.13 |
+| Token Encryption | AES (custom utils/tokenCrypto) | — |
+| Environment | dotenv | ^16.3 |
+
+### Frontend
+| Layer | Technology | Version |
+|-------|-----------|---------|
+| Framework | React | ^19.2 |
+| Routing | React Router DOM | ^6.28 |
+| Code Editor | Monaco Editor (@monaco-editor/react) | ^4.7 |
+| Code Editor (alt) | React Ace / ace-builds | ^14 |
+| Animations | Framer Motion | ^12 |
+| Markdown | react-markdown, marked | ^10 / ^17 |
+| Syntax Highlighting | Prism.js, react-syntax-highlighter | latest |
+| Icons | react-icons | ^5.5 |
+| Real-time | socket.io-client | ^4.8 |
+
+---
+
+## 5. System Architecture
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                   Client Browser                        │
+│         React SPA (port 3000 in dev)                    │
+└────────────────────────┬────────────────────────────────┘
+                         │ HTTP / WebSocket
+┌────────────────────────▼────────────────────────────────┐
+│              Express API Server (port 5000)             │
+│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌───────────┐  │
+│  │  Auth    │ │  Repos   │ │  Users   │ │  AI/QA    │  │
+│  │  Routes  │ │  Routes  │ │  Routes  │ │  Routes   │  │
+│  └──────────┘ └──────────┘ └──────────┘ └───────────┘  │
+│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌───────────┐  │
+│  │ Messages │ │  GitHub  │ │ Live Ed. │ │  Testing  │  │
+│  │  Routes  │ │  Routes  │ │  Routes  │ │  Routes   │  │
+│  └──────────┘ └──────────┘ └──────────┘ └───────────┘  │
+│                                                         │
+│      Socket.io Service (real-time layer)                │
+└──────────────┬─────────────────────┬───────────────────┘
+               │                     │
+┌──────────────▼──────┐   ┌──────────▼──────────────────┐
+│   MySQL Database    │   │   Local File Storage         │
+│   (devdock schema)  │   │   /uploads/                  │
+└─────────────────────┘   └─────────────────────────────┘
+               │
+┌──────────────▼──────────┐
+│   External Services     │
+│  • Groq API (LLaMA AI)  │
+│  • GitHub API v3        │
+│  • Google OAuth 2.0     │
+└─────────────────────────┘
+```
+
+### Key Design Decisions
+- **Monorepo** — backend at root, React client under `/client`
+- **REST API** — all routes under `/api/*` prefix; frontend proxied via CRA proxy
+- **JWT stateless auth** — tokens attached as `Authorization: Bearer <token>` header
+- **Socket.io** uses JWT auth middleware; real-time events for messaging, presence, and contributions
+- **Encrypted GitHub tokens** — AES-encrypted at rest; decrypted only at use time
+
+---
+
+## 6. Feature Specifications
+
+### 6.1 Authentication & Identity
+
+#### 6.1.1 Email/Password Registration & Login
+- User registers with `username`, `email`, and `password`
+- Password hashed with bcryptjs (salt rounds: 10)
+- On login, server issues a signed JWT; client stores it in localStorage
+- `POST /api/auth/register` — validate uniqueness of username and email
+- `POST /api/auth/login` — returns `{ token, user }`
+
+#### 6.1.2 Google OAuth 2.0
+- Flow: `/auth/google` → Google consent → `/auth/google/callback`
+- Account linking: if email already exists, Google ID is attached to the existing account
+- New accounts are created automatically with a unique username derived from the Google display name
+- On success, redirect to `/auth-success?token=<jwt>`
+
+#### 6.1.3 GitHub OAuth 2.0
+- Flow: `/auth/github` → GitHub consent → `/auth/github/callback`
+- GitHub access token is AES-encrypted and stored in `users.github_access_token`
+- `github_login` and `github_connected` fields updated on every login
+- Token refreshed on each OAuth callback to stay current
+
+#### 6.1.4 Password Recovery
+- `ForgotPassword` and `ResetPassword` UI components available
+- `SetPassword` component handles first-time password set for OAuth-only accounts
+
+#### 6.1.5 JWT Middleware
+- `middleware/auth.js` — `authenticateToken()` verifies and injects `req.user`
+- Optional auth pattern used on public routes to optionally enrich responses for logged-in users
+
+---
+
+### 6.2 Repository Management
+
+#### Core CRUD
+| Operation | Endpoint | Auth |
+|-----------|----------|------|
+| Create repo | `POST /api/repos` | Required |
+| List own repos | `GET /api/repos` | Required |
+| List public repos | `GET /api/repos/public` | Optional |
+| Get repo by ID | `GET /api/repos/:id` | Optional (private = Required) |
+| Update repo | `PUT /api/repos/:id` | Required (owner) |
+| Delete repo | `DELETE /api/repos/:id` | Required (owner) |
+
+#### Visibility
+- `public` — discoverable, readable by all
+- `private` — visible only to owner and collaborators
+
+#### Stars
+- `POST /api/repos/:id/star` — star a repo (unique constraint prevents duplicates)
+- `DELETE /api/repos/:id/star` — unstar
+- `GET /api/repos/:id/starred` — check star status
+- `GET /api/repos/starred` — get all repos starred by current user
+- Star events trigger `BadgeService.checkAllBadges()` to potentially award `first_star` badge
+
+#### Pinned Repositories
+- Users can pin up to N repositories to their public profile
+- `GET /api/users/:username/pinned` — get pinned repos
+- `POST /api/pinned` / `DELETE /api/pinned/:repoId` — manage pins
+- Pinning a repo awards the `first_pinned` badge
+
+#### Repository Actions Log
+- Every CRUD action (create, update, delete, star, upload) is recorded in `repository_actions` table
+- Powers the Insights tab and activity feed
+- `GET /api/repos/:id/actions` returns paginated log
+
+---
+
+### 6.3 File Management & Code Editor
+
+#### File Upload
+- `POST /api/repos/:id/upload` — multipart upload via Multer
+- Files stored under `uploads/<repoId>/` on disk
+- Metadata (name, path, size, type, repo_id, parent_folder_id, is_folder) stored in `files` table
+- Supported types: all (generic uploads); chat uploads restricted to images (jpg, jpeg, png, gif, webp, max 10 MB)
+
+#### File Tree
+- Hierarchical folder/file structure via `parent_folder_id` self-reference
+- `FileTreeSidebar` component renders the tree with expand/collapse
+- Inline file creation and folder creation from the UI
+
+#### Code Editor (Monaco)
+- `CodeEditor` component wraps `@monaco-editor/react`
+- Language auto-detected from file extension
+- Supports syntax highlighting, line numbers, theme toggle (dark/light)
+- Save triggers a commit entry recording the diff
+
+#### Markdown Preview
+- `MarkdownPreview` / `MarkdownPreviewComponent` — renders `.md` files via `react-markdown`
+- Split-pane view: source on left, rendered preview on right
+
+#### File Viewer
+- `FileViewer` component for read-only display of binary/non-code files
+- Image preview inline; other binary types show download link
+
+#### Commit History
+- `GET /api/repos/:id/commits` — paginated list of commits
+- Each commit records: message, timestamp, author (user_id), affected file_id
+- `CommitHistory` component shows timeline with author, message, and date
+
+---
+
+### 6.4 Social Features
+
+#### Follow / Unfollow
+- `POST /api/users/:id/follow` — follow a user
+- `DELETE /api/users/:id/follow` — unfollow
+- `GET /api/users/:username/followers` — list followers
+- `GET /api/users/:username/following` — list following
+- Follow events recorded in `user_contributions` for the heatmap
+
+#### Block
+- `POST /api/users/block/:targetId` — block user (creates `blocked_users` record)
+- `DELETE /api/users/block/:targetId` — unblock
+- Blocked users cannot send messages or view certain profile data
+- `Block` model manages `blocked_users` table
+
+#### Contribution Heatmap
+- GitHub-style contribution graph tracking daily activity
+- Activities tracked: commit, upload, star, follow, issue_create, pr_create, message_send, badge_earned
+- `GET /api/users/:username/contributions` — returns 365 days of daily counts
+- `GET /api/users/:username/contributions/streak` — current and longest streak
+
+#### Activity Feed
+- `GET /api/activities` — paginated feed of the current user's activities
+- `GET /api/users/:username/activities` — public activity for a profile
+- Activity types: repo_created, file_uploaded, star_given, follow, badge_earned, comment, pr_opened, issue_opened, etc.
+
+---
+
+### 6.5 Messaging System
+
+#### Architecture
+- REST API for CRUD + Socket.io for real-time delivery
+- All message routes require JWT auth (`router.use(authenticateToken)`)
+- Rate limiting: max 5 socket messages per user per second (in-memory)
+
+#### Conversations
+| Endpoint | Description |
+|----------|-------------|
+| `GET /api/messages/conversations` | Sidebar list: one row per partner, last message, unread count |
+| `GET /api/messages/messages/:partnerId` | Full message thread, paginated |
+| `POST /api/messages/send` | Send a text message |
+| `POST /api/messages/send-image` | Send an image (multipart, max 10 MB) |
+| `POST /api/messages/mark-read/:partnerId` | Mark all messages from partner as read |
+| `GET /api/messages/unread-count` | Total unread count for Navbar badge |
+| `GET /api/messages/search-users?q=` | Search users to start a new conversation |
+
+#### Real-time Events (Socket.io)
+| Event | Direction | Payload |
+|-------|-----------|---------|
+| `send_private_message` | client → server | `{ receiverId, content, type }` |
+| `private_message` | server → client | full message object |
+| `message_seen` | client → server | `{ partnerId }` |
+| `messages_seen` | server → client | `{ by: userId }` |
+| `user_online` | server → all | `{ userId }` |
+| `user_offline` | server → all | `{ userId }` |
+
+#### Messenger UI
+- `messenger/` component directory contains dedicated messenger pages
+- Sidebar with conversation list and online indicators
+- Message bubbles with image preview, timestamps, and read receipts
+- Typing indicator support
+
+---
+
+### 6.6 Collaboration & Access Control
+
+#### Collaborator Roles
+| Role | Permissions |
+|------|------------|
+| `viewer` | Read file content |
+| `editor` | Read + edit file content |
+| `owner` | Full CRUD + manage collaborators |
+
+#### Endpoints
+| Endpoint | Description |
+|----------|-------------|
+| `GET /api/collaboration/files/:fileId/collaborators` | List collaborators |
+| `POST /api/collaboration/files/:fileId/collaborators` | Add collaborator |
+| `PUT /api/collaboration/files/:fileId/collaborators/:userId` | Update role |
+| `DELETE /api/collaboration/files/:fileId/collaborators/:userId` | Remove collaborator |
+| `GET /api/collaboration/files/:fileId/can-edit` | Permission check |
+| `GET /api/collaboration/files/:fileId/info` | File metadata |
+
+All collaboration routes enforce `authenticateToken` and check caller's access level before proceeding.
+
+---
+
+### 6.7 Pull Requests & Issues
+
+#### Pull Requests
+- Scoped per repository
+- Fields: `title`, `description`, `source_branch`, `target_branch`, `status` (open / merged / closed)
+- Author linked to `users` table
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/repos/:repoId/pull-requests` | GET | List PRs (optionally filter by status) |
+| `/api/repos/:repoId/pull-requests` | POST | Open a new PR |
+| `/api/repos/:repoId/pull-requests/:prId` | GET | PR detail |
+| `/api/repos/:repoId/pull-requests/:prId` | PUT | Update title/description/status |
+| `/api/repos/:repoId/pull-requests/:prId` | DELETE | Close/delete PR |
+
+PullRequestsTab renders a GitHub-style list with status badges and author info.
+
+#### Issues
+- Fields: `title`, `description`, `state` (open / closed), `labels` (JSON array), `assignees` (JSON array)
+- Supports filtering by `state` query param
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/repos/:repoId/issues` | GET | List issues (`?state=open\|closed\|all`) |
+| `/api/repos/:repoId/issues` | POST | Create issue |
+| `/api/repos/:repoId/issues/:issueId` | GET | Issue detail |
+| `/api/repos/:repoId/issues/:issueId` | PUT | Edit issue |
+| `/api/repos/:repoId/issues/:issueId` | DELETE | Delete issue |
+
+IssuesTab renders issues with label chips, assignee avatars, and state toggle.
+
+---
+
+### 6.8 GitHub Integration
+
+#### Connection Flow
+1. User connects GitHub via `/auth/github` OAuth
+2. Access token encrypted (AES) and stored in `users.github_access_token`
+3. `GitHubConnect` component shows connection status; `GitHubConnectSuccess` handles callback
+
+#### Sync Operations
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/github/status` | GET | Check if token is valid |
+| `/api/github/list-repos` | GET | List user's GitHub repositories |
+| `/api/github/import` | POST | Import a GitHub repo as a new DevDock repo |
+| `/api/github/sync-push/:repoId` | POST | Push DevDock repo to GitHub (creates if not exists) |
+| `/api/github/sync-pull/:repoId` | POST | Pull latest from GitHub into DevDock repo |
+| `/api/github/link/:repoId` | POST | Link DevDock repo to an existing GitHub repo |
+| `/api/github/link/:repoId` | DELETE | Unlink |
+| `/api/github/link/:repoId` | GET | Get link info |
+| `/api/github/sync-history/:repoId` | GET | Last 20 sync log entries |
+
+#### Error Handling
+- 401 → Token invalid/expired, prompt reconnect
+- 429 → Rate limit hit, show retry countdown
+- 403 → Forbidden (scope issue)
+- 404 → Repo not found or private
+
+`GitHubSyncPanel` and `GitHubExplorer` components expose all sync operations from within a repository.
+
+---
+
+### 6.9 AI Assistant & Code Intelligence
+
+#### Chat Modes
+| Mode | System Prompt Focus |
+|------|-------------------|
+| `chat` | General developer Q&A |
+| `suggest` | Provide detailed code suggestions with markdown-formatted code blocks |
+| `explain` | Explain code concepts, highlight potential issues |
+| `improve` | Identify bugs, security issues, and optimization opportunities |
+
+#### Backend
+- `POST /api/ai/groq` — accepts `{ prompt, type }`
+- Uses Groq SDK with model `llama-3.1-8b-instant`
+- Temperature: 0.5, max tokens: 1000
+- API key loaded from `process.env.GROQ_API_KEY`
+
+#### Frontend
+- `AIAssistant` component — chat interface with mode selector
+- Renders AI responses with Prism.js syntax-highlighted code blocks
+- Supports multi-turn conversation context
+
+---
+
+### 6.10 Testing & QA Engine
+
+#### AI-Powered Testing (`/api/testing`)
+
+| Endpoint | Description |
+|----------|-------------|
+| `POST /api/testing/:repoId/analyze` | Full pipeline: static analysis + AI test plan + report |
+| `POST /api/testing/:repoId/completeness` | Code completeness check only |
+| `POST /api/testing/:repoId/static` | Static analysis only |
+| `POST /api/testing/:repoId/test-plan` | AI-generated test plan |
+| `POST /api/testing/:repoId/report` | AI-generated test report |
+| `GET /api/testing/:repoId/status` | Latest job status |
+| `GET /api/testing/:repoId/reports` | List saved reports |
+| `GET /api/testing/languages` | Supported languages |
+
+**Services involved:**
+- `StaticAnalyzer` — linting-style checks, complexity metrics
+- `CodeExtractor` — parses and extracts code from repository files
+- `CacheService` — caches analysis results to avoid redundant processing
+- `JobQueue` — async job processing with status tracking
+- Groq AI — generates natural language test plans and reports
+
+**Rate limiting:** 5 requests per user per minute (in-memory)
+
+#### QA Dashboard (`/api/qa`, `/api/qa-advanced`)
+
+| Concept | Description |
+|---------|-------------|
+| `qa_reports` | Top-level report per repo run; stores `quality_score` and `status` |
+| `qa_stages` | Phases of the QA pipeline (e.g., lint, unit, integration, security) |
+| `qa_defects` | Individual defects with `severity` (critical / high / medium / low) |
+
+- `QADashboard/` and `QATester/` React components display reports, stages, and defects
+- Defects sorted by severity: critical → high → medium → low
+
+---
+
+### 6.11 Live Collaborative Editor
+
+#### Architecture
+- `LiveEditor` feature spins up a separate Vite-based frontend (`live-text-editor-main`) on port **5173**
+- Backend for live editor runs on port **5003**
+- `liveEditor.js` route manages process lifecycle:
+  - Detects if already running (port check)
+  - Spawns `npm run dev` in the live editor directory
+  - Returns a redirect URL once the port is ready (max 10s wait with 500ms polling)
+
+#### Endpoints
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `POST /api/live-editor/start` | POST | Start live editor process |
+| `GET /api/live-editor/status` | GET | Check if live editor is running |
+| `POST /api/live-editor/stop` | POST | Stop live editor process |
+
+#### User Experience
+- `AutomatedLiveEditorButton` component triggers start and redirects the user
+- `CodeEditorCollab` handles in-platform real-time editing sessions
+- Users share edit sessions via Socket.io rooms scoped to file ID
+
+---
+
+### 6.12 Gamification & Achievements
+
+#### Badge Catalog
+| Badge Key | Name | Trigger |
+|-----------|------|---------|
+| `first_repo` | First Repo 🚀 | Created first repository |
+| `first_star` | First Star ⭐ | Received first star on any repo |
+| `seven_day_streak` | 7 Day Streak 🔥 | Contributed 7 consecutive days |
+| `power_contributor` | Power Contributor 💪 | 50+ total contributions |
+| `first_pinned` | Pinned Repo 📌 | Pinned first repository |
+| `verified` | Verified ✅ | Admin-granted verified status |
+
+#### Badge Logic
+- `BadgeService.awardBadge(userId, badgeKey)` — idempotent; awards once per user
+- `BadgeService.checkAllBadges(userId)` — called after key events (repo create, follow, etc.)
+- Badge award creates a `user_achievements` record and logs a `badge_earned` activity
+
+#### Contribution Tracking
+- Every meaningful action inserts a row into `user_contributions(user_id, activity_type, created_at)`
+- Activity types: `commit`, `upload`, `star`, `follow`, `issue_create`, `pr_create`, `message_send`, `badge_earned`
+- Socket broadcasts `new_contribution` event for live heatmap updates
+
+---
+
+### 6.13 Notifications
+
+#### Types
+- Follow, star, collaborator invite, PR opened, issue assigned, badge earned, message received, system
+
+#### Endpoints
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `GET /api/notifications` | GET | List unread + recent notifications |
+| `PUT /api/notifications/:id/read` | PUT | Mark single notification read |
+| `PUT /api/notifications/read-all` | PUT | Mark all read |
+| `DELETE /api/notifications/:id` | DELETE | Delete notification |
+
+Real-time delivery via Socket.io — clients subscribe to `notification` events on their user room (`user_<id>`).
+
+---
+
+### 6.14 User Profiles & Discovery
+
+#### Profile Fields
+- `username`, `email`, `name`, `bio`, `avatar_url`
+- `location`, `website`, `company`
+- Social links: `twitter_url`, `linkedin_url`, `github_url` (sanitized to block XSS)
+- `last_seen` — updated on socket connection
+- `is_verified`, `google_id`, `google_connected`, `github_login`, `github_connected`
+
+#### Endpoints
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `GET /api/users/profile` | GET | Own profile |
+| `PUT /api/users/profile` | PUT | Update own profile |
+| `PUT /api/users/password` | PUT | Change password |
+| `DELETE /api/users/account` | DELETE | Delete account |
+| `GET /api/users/:username` | GET | Public profile |
+| `GET /api/users/search?q=` | GET | Search users |
+| `GET /api/users/:username/repos` | GET | User's repositories |
+| `GET /api/users/:username/followers` | GET | Followers list |
+| `GET /api/users/:username/following` | GET | Following list |
+| `GET /api/users/:username/pinned` | GET | Pinned repos |
+| `GET /api/users/:username/contributions` | GET | Contribution heatmap data |
+| `GET /api/users/:username/activities` | GET | Public activity feed |
+| `GET /api/users/:username/achievements` | GET | Earned badges |
+
+`UserProfile` component renders the full profile page with heatmap, repos, achievements, and social links.
+`ShareProfileModal` and `ShareRepositoryModal` provide shareable links.
+
+---
+
+### 6.15 Admin Capabilities
+
+#### Access Control
+- Admin usernames defined in `process.env.ADMIN_USERNAMES` (comma-separated)
+- `requireAdmin` middleware enforces admin-only routes
+- Admin check uses username comparison (not a role column)
+
+#### Admin Endpoints
+- `GET /api/users/admin/all-users` — list all users (username, email, created_at)
+- `PUT /api/users/admin/verify/:username` — grant `verified` badge to a user
+- `DELETE /api/users/admin/:userId` — delete any user account
+
+---
+
+## 7. Database Schema
+
+### Core Tables
+
+```sql
+users (
+  id, username, email, password,
+  name, bio, avatar_url, location, website, company,
+  google_id, google_connected,
+  github_access_token, github_login, github_connected,
+  is_verified, last_seen,
+  created_at, updated_at
+)
+
+repositories (
+  id, name, description,
+  visibility ENUM('public','private'),
+  user_id FK,
+  github_repo_url, github_linked,
+  created_at, updated_at
+)
+
+files (
+  id, name, path, size, type,
+  repo_id FK,
+  parent_folder_id FK(self),
+  is_folder BOOLEAN,
+  created_at, updated_at
+)
+
+commits (
+  id, message, repo_id FK, user_id FK, file_id FK,
+  created_at
+)
+```
+
+### Social Tables
+
+```sql
+followers   (id, follower_id FK, following_id FK, created_at)
+stars       (id, user_id FK, repo_id FK, created_at)
+blocked_users (id, user_id FK, blocked_user_id FK, created_at)
+```
+
+### Collaboration Tables
+
+```sql
+collaborators (id, file_id FK, user_id FK, role ENUM('viewer','editor','owner'), created_at)
+pull_requests (id, repo_id FK, author_id FK, title, description, source_branch, target_branch, status, created_at)
+issues        (id, repo_id FK, author_id FK, title, description, state, labels JSON, assignees JSON, created_at)
+```
+
+### Messaging
+
+```sql
+messages (
+  id, sender_id FK, receiver_id FK,
+  content TEXT, type ENUM('text','image'),
+  is_read BOOLEAN,
+  created_at
+)
+```
+
+### Gamification & Activity
+
+```sql
+user_achievements  (id, user_id FK, badge_key VARCHAR, created_at)
+user_contributions (id, user_id FK, activity_type VARCHAR, created_at)
+activities         (id, user_id FK, type VARCHAR, data JSON, created_at)
+```
+
+### Notifications
+
+```sql
+notifications (id, user_id FK, type VARCHAR, message TEXT, related_id, is_read BOOLEAN, created_at)
+```
+
+### QA & Testing
+
+```sql
+qa_reports (id, repo_id FK, user_id FK, quality_score, status, created_at)
+qa_stages  (id, report_id FK, name, status, data JSON)
+qa_defects (id, report_id FK, severity ENUM('critical','high','medium','low'), title, description)
+```
+
+### Pinned Repositories
+
+```sql
+pinned_repositories (id, user_id FK, repo_id FK, order_index, created_at)
+```
+
+### Repository Actions Log
+
+```sql
+repository_actions (id, repo_id FK, user_id FK, action_type VARCHAR, metadata JSON, created_at)
+```
+
+---
+
+## 8. API Reference
+
+### Authentication Endpoints
+```
+POST   /api/auth/register
+POST   /api/auth/login
+GET    /auth/google
+GET    /auth/google/callback
+GET    /auth/github
+GET    /auth/github/callback
+GET    /auth-success                  (redirect target with ?token=)
+POST   /api/auth/forgot-password
+POST   /api/auth/reset-password
+POST   /api/auth/set-password
+```
+
+### Repository Endpoints
+```
+POST   /api/repos
+GET    /api/repos
+GET    /api/repos/public
+GET    /api/repos/starred
+GET    /api/repos/:id
+PUT    /api/repos/:id
+DELETE /api/repos/:id
+POST   /api/repos/:id/upload
+GET    /api/repos/:id/files
+GET    /api/repos/:id/commits
+POST   /api/repos/:id/star
+DELETE /api/repos/:id/star
+GET    /api/repos/:id/starred
+GET    /api/repos/:id/actions
+```
+
+### User Endpoints
+```
+GET    /api/users/profile
+PUT    /api/users/profile
+PUT    /api/users/password
+DELETE /api/users/account
+GET    /api/users/search?q=
+GET    /api/users/:username
+GET    /api/users/:username/repos
+GET    /api/users/:username/followers
+GET    /api/users/:username/following
+POST   /api/users/:id/follow
+DELETE /api/users/:id/follow
+POST   /api/users/block/:targetId
+DELETE /api/users/block/:targetId
+GET    /api/users/:username/contributions
+GET    /api/users/:username/activities
+GET    /api/users/:username/achievements
+GET    /api/users/:username/pinned
+GET    /api/users/admin/all-users
+PUT    /api/users/admin/verify/:username
+DELETE /api/users/admin/:userId
+```
+
+### Messaging Endpoints
+```
+GET    /api/messages/conversations
+GET    /api/messages/messages/:partnerId
+POST   /api/messages/send
+POST   /api/messages/send-image
+POST   /api/messages/mark-read/:partnerId
+GET    /api/messages/unread-count
+GET    /api/messages/search-users?q=
+```
+
+### Collaboration Endpoints
+```
+GET    /api/collaboration/files/:fileId/collaborators
+POST   /api/collaboration/files/:fileId/collaborators
+PUT    /api/collaboration/files/:fileId/collaborators/:userId
+DELETE /api/collaboration/files/:fileId/collaborators/:userId
+GET    /api/collaboration/files/:fileId/can-edit
+GET    /api/collaboration/files/:fileId/info
+```
+
+### GitHub Integration Endpoints
+```
+GET    /api/github/status
+GET    /api/github/list-repos
+POST   /api/github/import
+POST   /api/github/sync-push/:repoId
+POST   /api/github/sync-pull/:repoId
+POST   /api/github/link/:repoId
+DELETE /api/github/link/:repoId
+GET    /api/github/link/:repoId
+GET    /api/github/sync-history/:repoId
+```
+
+### AI & Testing Endpoints
+```
+POST   /api/ai/groq
+POST   /api/testing/:repoId/analyze
+POST   /api/testing/:repoId/completeness
+POST   /api/testing/:repoId/static
+POST   /api/testing/:repoId/test-plan
+POST   /api/testing/:repoId/report
+GET    /api/testing/:repoId/status
+GET    /api/testing/:repoId/reports
+GET    /api/testing/languages
+GET    /api/qa/:repoId/reports
+POST   /api/qa/:repoId/run
+GET    /api/qa/reports/:reportId
+```
+
+### Live Editor Endpoints
+```
+POST   /api/live-editor/start
+GET    /api/live-editor/status
+POST   /api/live-editor/stop
+```
+
+### Notifications Endpoints
+```
+GET    /api/notifications
+PUT    /api/notifications/:id/read
+PUT    /api/notifications/read-all
+DELETE /api/notifications/:id
+```
+
+### Pull Requests & Issues
+```
+GET    /api/repos/:repoId/pull-requests
+POST   /api/repos/:repoId/pull-requests
+GET    /api/repos/:repoId/pull-requests/:prId
+PUT    /api/repos/:repoId/pull-requests/:prId
+DELETE /api/repos/:repoId/pull-requests/:prId
+
+GET    /api/repos/:repoId/issues
+POST   /api/repos/:repoId/issues
+GET    /api/repos/:repoId/issues/:issueId
+PUT    /api/repos/:repoId/issues/:issueId
+DELETE /api/repos/:repoId/issues/:issueId
+```
+
+### Pinned Repos
+```
+GET    /api/pinned
+POST   /api/pinned
+DELETE /api/pinned/:repoId
+```
+
+### Contributions
+```
+GET    /api/users/:username/contributions
+GET    /api/users/:username/contributions/streak
+```
+
+---
+
+## 9. Non-Functional Requirements
+
+### Performance
+- API response time < 300ms for all read operations under normal load
+- File upload limit: 10 MB per file for code files; 10 MB for chat images
+- Socket.io rate limit: 5 messages/second/user to prevent spam flooding
+- AI endpoint rate limit: 5 requests/minute/user
+- Database indexes on all FK columns and frequently queried fields (user_id, repo_id, is_read, created_at)
+- `CacheService` used to avoid redundant analysis runs on unchanged code
+
+### Scalability
+- Stateless JWT authentication supports horizontal scaling of the API server
+- Socket.io server may require sticky sessions or a Redis adapter for multi-instance deployment
+- File storage is local (`uploads/`); migrate to S3-compatible storage for production scale
+
+### Availability
+- `kill_ports.bat` / `npm run kill-ports` scripts for clean restarts during development
+- `npm run dev-safe` kills lingering processes before starting
+- `cloudflared/` directory indicates support for Cloudflare Tunnel for public exposure without open firewall ports
+
+### Maintainability
+- Modular route files (one file per feature domain)
+- Dedicated service layer (`/services/`) for business logic
+- Separate model layer (`/models/`) for database operations
+- Migration scripts (`/migrations/`) for schema evolution without data loss
+
+---
+
+## 10. Security Requirements
+
+### Authentication & Authorization
+- Passwords never stored in plaintext — bcryptjs with 10 salt rounds
+- JWT signed with `process.env.JWT_SECRET` — must be ≥ 32 characters in production
+- GitHub OAuth tokens AES-encrypted at rest (`utils/tokenCrypto`); never returned to client
+- All mutation endpoints require `authenticateToken` middleware
+- Ownership checks enforced before update/delete on repos, files, PRs, issues
+
+### Input Validation & Sanitization
+- Social link URLs sanitized via `sanitizeUrl()` — blocks `javascript:`, `data:`, `vbscript:` URI schemes
+- File upload restricted by MIME type and size in Multer config
+- SQL queries use parameterized statements (mysql2 prepared queries) — no string interpolation
+- User search input sanitized with `LIKE` + `%` escape via parameterized queries
+
+### Access Control
+- Public repos readable by anyone; private repos check ownership or collaborator membership
+- Collaboration role check on all file-scoped operations
+- Admin routes protected by `requireAdmin` middleware (username allowlist from env)
+- Blocked users cannot message or access certain profile data
+
+### Rate Limiting
+- In-memory rate limiter on Socket.io messages (5 msg/sec/user)
+- In-memory rate limiter on AI/Testing endpoints (5 req/min/user)
+- Consider adding `express-rate-limit` for HTTP endpoints in production
+
+### Network
+- CORS configured (review `origin: '*'` in Socket.io — restrict to known origins in production)
+- HTTPS enforced when deployed behind Cloudflare Tunnel
+- Environment variables never committed (`.env` in `.gitignore`)
+
+---
+
+## 11. Future Roadmap
+
+| Feature | Priority | Notes |
+|---------|----------|-------|
+| Branch management (create, switch, merge) | P1 | Currently PRs reference branch names as strings |
+| Comment threads on PRs and Issues | P1 | Inline code review comments |
+| Webhook support (outbound) | P1 | Notify external services on push/PR/issue events |
+| Email notifications | P1 | SMTP integration for follow, star, PR events |
+| Organization / Team accounts | P2 | Team-level repos and billing |
+| S3 / object storage for files | P2 | Replace local `uploads/` for production |
+| Redis adapter for Socket.io | P2 | Required for multi-instance deployment |
+| Express rate limiting (HTTP layer) | P2 | Replace in-memory maps with `express-rate-limit` |
+| Repository fork functionality | P2 | Fork public repos into own namespace |
+| Code diff viewer | P2 | Visual diff between commits |
+| CI/CD pipeline integration | P3 | Trigger GitHub Actions or custom runners |
+| Mobile-responsive overhaul | P3 | Current design targets desktop |
+| Two-factor authentication (2FA) | P3 | TOTP-based 2FA for account security |
+
+---
+
+*This document reflects the state of the DevDock codebase as of March 12, 2026. It should be updated as new features are shipped.*
