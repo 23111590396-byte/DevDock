@@ -5,6 +5,7 @@ import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import api from '../api/axios';
 
+
 const MODES = [
   { id: 'chat', label: 'Chat', placeholder: 'Ask anything about your code...' },
   { id: 'suggest', label: 'Suggest', placeholder: 'Describe what you need...' },
