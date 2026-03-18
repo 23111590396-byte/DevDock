@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FiFolder, FiFolderOpen, FiFile, FiFilePlus, FiFolderPlus } from 'react-icons/fi';
+import { FiFolder, FiFile, FiFilePlus, FiFolderPlus } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
 
 function TreeNode({ node, depth = 0, onSelect, selectedFile }) {
@@ -28,7 +28,7 @@ function TreeNode({ node, depth = 0, onSelect, selectedFile }) {
         onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = '#21262d'; }}
         onMouseLeave={e => { if (!isSelected) e.currentTarget.style.background = 'transparent'; }}
       >
-        {isDir ? (open ? <FiFolderOpen size={14} color="#e3b341" /> : <FiFolder size={14} color="#e3b341" />) : <FiFile size={14} color="#8b949e" />}
+        {isDir ? (open ? <FiFolder size={14} color="#58a6ff" /> : <FiFolder size={14} color="#e3b341" />) : <FiFile size={14} color="#8b949e" />}
         <span>{node.name}</span>
       </div>
       {isDir && (
